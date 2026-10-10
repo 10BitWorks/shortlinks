@@ -67,11 +67,13 @@ ENV NODE_ENV=production \
     PORT=3000
 # Full pnpm workspace layout (root node_modules symlinks into the shared .pnpm
 # store — partial copies break the links), with the frontend as workdir.
+# packages/* are symlink targets for workspace deps (@qrcodly/db etc).
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/frontend/node_modules /app/apps/frontend/node_modules
 COPY --from=build /app/apps/frontend/.next /app/apps/frontend/.next
 COPY --from=build /app/apps/frontend/package.json /app/apps/frontend/package.json
 COPY --from=build /app/apps/frontend/public /app/apps/frontend/public
+COPY --from=build /app/packages /app/packages
 # next must resolve from the workspace deps; run via its own binary.
 WORKDIR /app/apps/frontend
 EXPOSE 3000

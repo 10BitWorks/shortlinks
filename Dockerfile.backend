@@ -42,10 +42,13 @@ ENV TZ=America/Chicago
 # Compiled output + the FULL pnpm node_modules tree (root node_modules holds
 # symlinks into the workspace-level .pnpm store, so all three levels must be
 # copied together — copying apps/backend/node_modules alone breaks the links).
+# Workspace packages (@qrcodly/db, @shared/schemas) resolve to packages/*,
+# which are symlink targets — copy their built dist output too.
 COPY --from=build /app/apps/backend/build /app/apps/backend/build
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/backend/node_modules /app/apps/backend/node_modules
 COPY --from=build /app/apps/backend/package.json /app/apps/backend/package.json
+COPY --from=build /app/packages /app/packages
 WORKDIR /app/apps/backend
 # migration files (drizzle) live in src — migrate.js runs from build, but keep drizzle config assets
 COPY --from=build /app/apps/backend/drizzle.config.ts /app/apps/backend/drizzle.config.ts
