@@ -1,10 +1,18 @@
 # Frontend (Next.js) — monorepo build for 10BitWorks/shortlinks (QRcodly fork)
 # Build context: repo root.
-# NEXT_PUBLIC_* vars are baked into the client bundle at build time; we build with
-# production values for 10bit.works so the served bundle points at the right hosts.
+#
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time, so the
+# production values below are what ships. The docs generation step
+# (`generate:docs`) fetches $NEXT_PUBLIC_API_URL/openapi.json during build; the
+# real backend isn't reachable then, so we briefly serve the bundled mcp-server
+# spec on localhost and point the env var there for that one command only, then
+# restore production before `next build` so the bundle inlines the real URL.
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
+# git is needed by the lefthook postinstall during pnpm install
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
 WORKDIR /app
 
@@ -47,7 +55,16 @@ ENV SKIP_ENV_VALIDATION=true \
     AXIOM_TOKEN= \
     AXIOM_DATASET=shortlinks
 RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
-	&& pnpm --filter @apps/frontend run build
+	&& node -e "\
+const http=require('http'),fs=require('fs');\
+const spec=fs.readFileSync('apps/mcp-server/src/openapi.json');\
+const s=http.createServer((req,res)=>{res.writeHead(200,{'content-type':'application/json'});res.end(spec);});\
+s.listen(8787,'127.0.0.1',()=>console.log('spec server up'));\
+" & SPEC_PID=$! \
+	&& sleep 1 \
+	&& NEXT_PUBLIC_API_URL=http://127.0.0.1:8787 pnpm --filter @apps/frontend run generate:docs \
+	&& kill $SPEC_PID 2>/dev/null; \
+	pnpm --filter @apps/frontend run build
 
 # ---------- runtime ----------
 FROM node:22-bookworm-slim AS runtime
