@@ -1,0 +1,64 @@
+# Frontend (Next.js) — monorepo build for 10BitWorks/shortlinks (QRcodly fork)
+# Build context: repo root.
+# NEXT_PUBLIC_* vars are baked into the client bundle at build time; we build with
+# production values for 10bit.works so the served bundle points at the right hosts.
+FROM node:22-bookworm-slim AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
+WORKDIR /app
+
+# ---------- deps (frontend + its workspace deps) ----------
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/frontend/package.json apps/frontend/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/db/package.json packages/db/package.json
+COPY packages/eslint-config/package.json packages/eslint-config/package.json
+COPY packages/typescript-config/package.json packages/typescript-config/package.json
+COPY patches patches
+RUN pnpm install --frozen-lockfile --filter @apps/frontend...
+
+# ---------- build ----------
+FROM base AS build
+COPY --from=deps /pnpm /pnpm
+COPY --from=deps /app /app
+COPY . .
+# Server-only secrets are validated at build unless skipped; client NEXT_PUBLIC_* values
+# below are the production values that get inlined into the bundle.
+ENV SKIP_ENV_VALIDATION=true \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production \
+    NEXT_PUBLIC_FRONTEND_URL=https://short.10bit.works \
+    NEXT_PUBLIC_SHORT_URL_DOMAIN=https://short.10bit.works \
+    NEXT_PUBLIC_API_URL=https://api.10bit.works \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA \
+    NEXT_PUBLIC_CLERK_JS_URL=/__clerk-js/dist/clerk.browser.min.js \
+    NEXT_PUBLIC_SENTRY_DSN=https://placeholder@o0.ingest.sentry.io/0 \
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT=production \
+    NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_MONTHLY=price_placeholder \
+    NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_ANNUAL=price_placeholder \
+    NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_MONTHLY=price_placeholder \
+    NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_ANNUAL=price_placeholder \
+    NEXT_PUBLIC_GOOGLE_API_KEY=placeholder \
+    CLERK_SECRET_KEY=sk_test_placeholder_do_not_use_0123456789abcdef \
+    CLERK_ENCRYPTION_KEY=placeholder_clerk_encryption_key_placeholder_ \
+    INTERNAL_API_SECRET=placeholder_internal_api_secret_placeholder_00 \
+    AXIOM_TOKEN= \
+    AXIOM_DATASET=shortlinks
+RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
+	&& pnpm --filter @apps/frontend run build
+
+# ---------- runtime ----------
+FROM node:22-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+    TZ=America/Chicago \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000
+COPY --from=build /app/apps/frontend/.next /app/.next
+COPY --from=build /app/apps/frontend/node_modules /app/node_modules
+COPY --from=build /app/apps/frontend/package.json /app/package.json
+COPY --from=build /app/apps/frontend/public /app/public
+EXPOSE 3000
+CMD ["npx", "next", "start"]

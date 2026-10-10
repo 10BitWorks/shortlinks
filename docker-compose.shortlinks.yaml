@@ -1,0 +1,165 @@
+# shortlinks — QRcodly fork deployed for 10BitWorks
+# Single Coolify service (compose stack) under the Website project.
+#
+# Domains:
+#   short.10bit.works → frontend (serves /u/<code> short-link redirects + UI)
+#   api.10bit.works   → backend Fastify API
+#
+# Auth status: Clerk placeholder keys — sign-in will NOT work until the
+# Authentik OIDC port lands (in progress). Public redirects work without auth.
+# Billing/Stripe, Umami analytics, Sentry, Cloudflare custom-domains: placeholders.
+# The zod env schemas require these keys to exist; services behind them fail soft.
+
+services:
+  db:
+    image: mysql:8.4
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: shortlinks
+      MYSQL_USER: shortlinks
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command:
+      - --max-connections=100
+      - --innodb-buffer-pool-size=256M
+      - --innodb-redo-log-capacity=128M
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-flush-method=O_DIRECT
+    volumes:
+      - shortlinks-db:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - shortlinks-redis:/data
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    environment:
+      MINIO_ROOT_USER: shortlinks
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_STORAGE_USE_HTTPS: 0
+    volumes:
+      - shortlinks-minio:/data
+    command: server /data
+
+  # One-shot bucket bootstrap. Stopped after exit is normal — excluded from health
+  # monitoring so the stack doesn't show degraded.
+  minio-setup:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local http://minio:9000 shortlinks $$MINIO_PASSWORD) do sleep 1; done;
+      /usr/bin/mc mb --ignore-existing local/shortlinks;
+      /usr/bin/mc anonymous set download local/shortlinks;
+      exit 0;
+      "
+    environment:
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+    labels:
+      - coolify.halthcheck.exclude=true
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: always
+    depends_on:
+      - db
+      - redis
+      - minio
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: "5001"
+      BACKEND_URL: https://api.10bit.works
+      BASE_URL: https://api.10bit.works
+      FRONTEND_URL: https://short.10bit.works
+      SHORT_URL_BASE_URL: https://short.10bit.works
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: shortlinks
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: shortlinks
+      DB_MIGRATING: "false"
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      ANALYTICS_ENCRYPTION_KEY: ${ANALYTICS_ENCRYPTION_KEY}
+      DISABLE_RATE_LIMITING: "false"
+      SMTP_HOST: smtp.placeholder.invalid
+      SMTP_PORT: "587"
+      SMTP_USER: placeholder
+      SMTP_PASS: ${PLACEHOLDER_SECRET}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_UPLOAD_KEY: shortlinks
+      S3_UPLOAD_SECRET: ${MINIO_PASSWORD}
+      S3_BUCKET_NAME: shortlinks
+      S3_PUBLIC_URL: http://minio:9000/shortlinks
+      SENTRY_DSN: https://placeholder@o0.ingest.sentry.io/0
+      SENTRY_ENVIRONMENT: production
+      CLERK_PUBLISHABLE_KEY: pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA
+      CLERK_SECRET_KEY: sk_test_placeholder_do_not_use_0123456789abcdef
+      CLERK_WEBHOOK_SECRET_KEY: whsec_placeholder_do_not_use_0123456789abcdef
+      UMAMI_HOST: https://umami.placeholder.invalid
+      UMAMI_WEBSITE: shortlinks
+      UMAMI_USERNAME: placeholder
+      UMAMI_PASSWORD: ${PLACEHOLDER_SECRET}
+      CLOUDFLARE_API_TOKEN: placeholder
+      CLOUDFLARE_ZONE_ID: placeholder
+      CLOUDFLARE_DCV_DELEGATION_TARGET: placeholder.dcv.placeholder.invalid
+      STRIPE_SECRET_KEY: sk_test_placeholder_do_not_use
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder_do_not_use
+      STRIPE_PRO_PRICE_ID_MONTHLY: price_placeholder
+      STRIPE_PRO_PRICE_ID_ANNUAL: price_placeholder
+      STRIPE_ADDON_DOMAIN_PRICE_ID_MONTHLY: price_placeholder
+      STRIPE_ADDON_DOMAIN_PRICE_ID_ANNUAL: price_placeholder
+      GOOGLE_WEB_RISK_API_KEY: ""
+      URL_SAFETY_RECHECK_MODE: shadow
+      LOG_LEVEL: info
+      TZ: America/Chicago
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      NEXT_PUBLIC_FRONTEND_URL: https://short.10bit.works
+      NEXT_PUBLIC_SHORT_URL_DOMAIN: https://short.10bit.works
+      NEXT_PUBLIC_API_URL: https://api.10bit.works
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA
+      CLERK_SECRET_KEY: sk_test_placeholder_do_not_use_0123456789abcdef
+      CLERK_ENCRYPTION_KEY: ${PLACEHOLDER_SECRET}
+      NEXT_PUBLIC_CLERK_JS_URL: /__clerk-js/dist/clerk.browser.min.js
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      NEXT_PUBLIC_SENTRY_DSN: https://placeholder@o0.ingest.sentry.io/0
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
+      AXIOM_TOKEN: ""
+      AXIOM_DATASET: shortlinks
+      NEXT_PUBLIC_GOOGLE_API_KEY: placeholder
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_MONTHLY: price_placeholder
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_ANNUAL: price_placeholder
+      NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_MONTHLY: price_placeholder
+      NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_ANNUAL: price_placeholder
+      NEXT_PUBLIC_POSTHOG_KEY: ""
+      NEXT_PUBLIC_POSTHOG_HOST: ""
+      LOG_LEVEL: info
+      TZ: America/Chicago
+
+volumes:
+  shortlinks-db:
+  shortlinks-redis:
+  shortlinks-minio:
