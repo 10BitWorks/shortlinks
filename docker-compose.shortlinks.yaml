@@ -130,7 +130,9 @@ services:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
       NEXT_PUBLIC_SENTRY_DSN: https://placeholder@o0.ingest.sentry.io/0
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
-      AXIOM_TOKEN: ""
+      # emptyStringAsUndefined makes AXIOM_TOKEN='' fail z.string() at startup —
+      # use a non-empty placeholder until a real Axiom token is wired up.
+      AXIOM_TOKEN: placeholder-no-axiom
       AXIOM_DATASET: shortlinks
       NEXT_PUBLIC_GOOGLE_API_KEY: placeholder
       NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_MONTHLY: price_placeholder
