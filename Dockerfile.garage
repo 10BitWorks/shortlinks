@@ -1,0 +1,6 @@
+# Garage single-node wrapper — bakes in the config file.
+# The upstream dxflrs/garage image is distroless (no shell), so a runtime
+# entrypoint can't generate the config; a bind mount doesn't work in Coolify
+# service stacks (no repo checkout on the host). This image is the clean fix.
+FROM dxflrs/garage:v2.4.1
+COPY garage.toml /etc/garage.toml

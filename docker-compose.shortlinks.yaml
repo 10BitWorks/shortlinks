@@ -5,10 +5,13 @@
 #   short.10bit.works → frontend (serves /u/<code> short-link redirects + UI)
 #   api.10bit.works   → backend Fastify API
 #
+# Object storage: Garage (single-node) — MinIO was removed from Docker Hub in
+# Sept 2026. The access key + bucket are auto-bootstrapped at first start via
+# GARAGE_DEFAULT_* env vars (needs garage >= v2.3).
+#
 # Auth status: Clerk placeholder keys — sign-in will NOT work until the
-# Authentik OIDC port lands (in progress). Public redirects work without auth.
+# Authentik OIDC port lands. Public redirects (/u/<code>) need no auth.
 # Billing/Stripe, Umami analytics, Sentry, Cloudflare custom-domains: placeholders.
-# The zod env schemas require these keys to exist; services behind them fail soft.
 
 services:
   db:
@@ -35,45 +38,27 @@ services:
     volumes:
       - shortlinks-redis:/data
 
-  minio:
-    image: minio/minio:latest
+  garage:
+    image: ghcr.io/10bitworks/shortlinks-garage:latest
     restart: always
+    command: /garage server --single-node --default-bucket
     environment:
-      MINIO_ROOT_USER: shortlinks
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
-      MINIO_STORAGE_USE_HTTPS: 0
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: shortlinks
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
     volumes:
-      - shortlinks-minio:/data
-    command: server /data
-
-  # One-shot bucket bootstrap. Stopped after exit is normal — excluded from health
-  # monitoring so the stack doesn't show degraded.
-  minio-setup:
-    image: minio/mc:latest
-    restart: "no"
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until (/usr/bin/mc alias set local http://minio:9000 shortlinks $$MINIO_PASSWORD) do sleep 1; done;
-      /usr/bin/mc mb --ignore-existing local/shortlinks;
-      /usr/bin/mc anonymous set download local/shortlinks;
-      exit 0;
-      "
-    environment:
-      MINIO_PASSWORD: ${MINIO_PASSWORD}
-    labels:
-      - coolify.halthcheck.exclude=true
+      - shortlinks-garage-meta:/var/lib/garage/meta
+      - shortlinks-garage-data:/var/lib/garage/data
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: ghcr.io/10bitworks/shortlinks-backend:latest
     restart: always
     depends_on:
       - db
       - redis
-      - minio
+      - garage
     environment:
       NODE_ENV: production
       API_HOST: 0.0.0.0
@@ -98,12 +83,12 @@ services:
       SMTP_PORT: "587"
       SMTP_USER: placeholder
       SMTP_PASS: ${PLACEHOLDER_SECRET}
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://garage:3900
       S3_REGION: us-east-1
-      S3_UPLOAD_KEY: shortlinks
-      S3_UPLOAD_SECRET: ${MINIO_PASSWORD}
+      S3_UPLOAD_KEY: ${GARAGE_ACCESS_KEY}
+      S3_UPLOAD_SECRET: ${GARAGE_SECRET_KEY}
       S3_BUCKET_NAME: shortlinks
-      S3_PUBLIC_URL: http://minio:9000/shortlinks
+      S3_PUBLIC_URL: https://api.10bit.works/s3
       SENTRY_DSN: https://placeholder@o0.ingest.sentry.io/0
       SENTRY_ENVIRONMENT: production
       CLERK_PUBLISHABLE_KEY: pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA
@@ -128,9 +113,7 @@ services:
       TZ: America/Chicago
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ghcr.io/10bitworks/shortlinks-frontend:latest
     restart: always
     depends_on:
       - backend
@@ -162,4 +145,5 @@ services:
 volumes:
   shortlinks-db:
   shortlinks-redis:
-  shortlinks-minio:
+  shortlinks-garage-meta:
+  shortlinks-garage-data:
