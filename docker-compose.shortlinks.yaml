@@ -91,7 +91,8 @@ services:
       S3_PUBLIC_URL: https://api.10bit.works/s3
       SENTRY_DSN: https://placeholder@o0.ingest.sentry.io/0
       SENTRY_ENVIRONMENT: production
-      CLERK_PUBLISHABLE_KEY: pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA
+      # Format-valid dummy publishable key (see frontend note).
+      CLERK_PUBLISHABLE_KEY: pk_test_dGVzdGluZy05NjY5NTEzNzQ5.clerk.accounts.dev$78
       CLERK_SECRET_KEY: sk_test_placeholder_do_not_use_0123456789abcdef
       CLERK_WEBHOOK_SECRET_KEY: whsec_placeholder_do_not_use_0123456789abcdef
       UMAMI_HOST: https://umami.placeholder.invalid
@@ -123,7 +124,10 @@ services:
       NEXT_PUBLIC_FRONTEND_URL: https://short.10bit.works
       NEXT_PUBLIC_SHORT_URL_DOMAIN: https://short.10bit.works
       NEXT_PUBLIC_API_URL: https://api.10bit.works
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder_bXVjaC1ob3JuZXQtNDYuY2xlcmsuYWNjb3VudHMuZGV2JA
+      # Format-valid dummy publishable key (base64 instance + numeric suffix).
+      # Clerk's SDK validates format at init; real auth comes with the
+      # Authentik OIDC port.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dGVzdGluZy05NjY5NTEzNzQ5.clerk.accounts.dev$78
       CLERK_SECRET_KEY: sk_test_placeholder_do_not_use_0123456789abcdef
       CLERK_ENCRYPTION_KEY: ${PLACEHOLDER_SECRET}
       NEXT_PUBLIC_CLERK_JS_URL: /__clerk-js/dist/clerk.browser.min.js
