@@ -1,0 +1,22 @@
+name: Flip package visibility
+
+on:
+  workflow_dispatch:
+
+jobs:
+  flip:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Make shortlinks packages public
+        run: |
+          for pkg in shortlinks-garage shortlinks-backend shortlinks-frontend; do
+            echo "== $pkg =="
+            curl -s -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/orgs/10BitWorks/packages/container/$pkg/visibility" \
+              -d '{"visibility":"public"}'
+            echo
+          done
