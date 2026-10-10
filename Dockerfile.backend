@@ -45,6 +45,7 @@ ENV TZ=America/Chicago
 # Workspace packages (@qrcodly/db, @shared/schemas) resolve to packages/*,
 # which are symlink targets — copy their built dist output too.
 COPY --from=build /app/apps/backend/build /app/apps/backend/build
+COPY --from=build /app/apps/backend/src/core/db/migrations /app/apps/backend/src/core/db/migrations
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/backend/node_modules /app/apps/backend/node_modules
 COPY --from=build /app/apps/backend/package.json /app/apps/backend/package.json
