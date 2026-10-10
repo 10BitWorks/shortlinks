@@ -2,11 +2,12 @@
 # Build context: repo root.
 #
 # NEXT_PUBLIC_* vars are inlined into the client bundle at build time, so the
-# production values below are what ships. The docs generation step
-# (`generate:docs`) fetches $NEXT_PUBLIC_API_URL/openapi.json during build; the
-# real backend isn't reachable then, so we briefly serve the bundled mcp-server
-# spec on localhost and point the env var there for that one command only, then
-# restore production before `next build` so the bundle inlines the real URL.
+# production values below are what ships.
+#
+# Docs generation: `generate:docs` consumes the OpenAPI spec via
+# apps/frontend/src/lib/openapi.ts, which prefers a local `openapi.local.json`
+# when present (container builds can't reach the running backend). We copy the
+# bundled mcp-server spec there before the build.
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
@@ -55,7 +56,7 @@ ENV SKIP_ENV_VALIDATION=true \
     AXIOM_TOKEN= \
     AXIOM_DATASET=shortlinks
 RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
-	&& node docs-spec-server.cjs \
+	&& cp apps/mcp-server/src/openapi.json apps/frontend/openapi.local.json \
 	&& pnpm --filter @apps/frontend run build
 
 # ---------- runtime ----------
