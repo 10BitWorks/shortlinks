@@ -55,16 +55,8 @@ ENV SKIP_ENV_VALIDATION=true \
     AXIOM_TOKEN= \
     AXIOM_DATASET=shortlinks
 RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
-	&& node -e "\
-const http=require('http'),fs=require('fs');\
-const spec=fs.readFileSync('apps/mcp-server/src/openapi.json');\
-const s=http.createServer((req,res)=>{res.writeHead(200,{'content-type':'application/json'});res.end(spec);});\
-s.listen(8787,'127.0.0.1',()=>console.log('spec server up'));\
-" & SPEC_PID=$! \
-	&& sleep 1 \
-	&& NEXT_PUBLIC_API_URL=http://127.0.0.1:8787 pnpm --filter @apps/frontend run generate:docs \
-	&& kill $SPEC_PID 2>/dev/null; \
-	pnpm --filter @apps/frontend run build
+	&& node docs-spec-server.cjs \
+	&& pnpm --filter @apps/frontend run build
 
 # ---------- runtime ----------
 FROM node:22-bookworm-slim AS runtime
