@@ -136,6 +136,8 @@ services:
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
       # emptyStringAsUndefined makes AXIOM_TOKEN='' fail z.string() at startup —
       # use a non-empty placeholder until a real Axiom token is wired up.
+      # Skip Clerk in middleware while placeholder keys are in place.
+      AUTH_DISABLED: "true"
       AXIOM_TOKEN: placeholder-no-axiom
       AXIOM_DATASET: shortlinks
       NEXT_PUBLIC_GOOGLE_API_KEY: placeholder
