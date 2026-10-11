@@ -1,0 +1,15 @@
+{
+  "name": "@clerk/nextjs",
+  "version": "7.5.19-shim",
+  "description": "AUTH_DISABLED shim replacing @clerk/nextjs (see src/clerk-shim.js)",
+  "sideEffects": false,
+  "exports": {
+    ".": "./index.mjs",
+    "./server": "./server.mjs",
+    "./errors": "./index.mjs",
+    "./types": "./index.mjs",
+    "./package.json": "./package.json"
+  },
+  "main": "index.mjs",
+  "types": "index.mjs"
+}
