@@ -32,6 +32,23 @@ export default function Providers({
 
 	const clerkLocale = locale ? localeMap[locale] || enUS : enUS;
 
+	const content = (
+		<QueryClientProvider client={queryClient}>
+			<PostHogProvider>
+				<TooltipProvider>{children}</TooltipProvider>
+			</PostHogProvider>
+		</QueryClientProvider>
+	);
+
+	// AUTH_DISABLED: render without ClerkProvider so the browser never loads
+	// clerk-js from the placeholder instance's domain (clerk.accounts.dev),
+	// which fails with "unable to attribute this request to an instance".
+	// Server-side middleware skips Clerk too (see src/proxy.ts). Remove this
+	// switch when the Authentik OIDC port replaces Clerk.
+	if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
+		return content;
+	}
+
 	return (
 		<ClerkProvider
 			localization={clerkLocale}
@@ -39,11 +56,7 @@ export default function Providers({
 				theme: shadcn,
 			}}
 		>
-			<QueryClientProvider client={queryClient}>
-				<PostHogProvider>
-					<TooltipProvider>{children}</TooltipProvider>
-				</PostHogProvider>
-			</QueryClientProvider>
+			{content}
 		</ClerkProvider>
 	);
 }
