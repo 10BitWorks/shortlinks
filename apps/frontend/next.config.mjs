@@ -63,11 +63,23 @@ const config = {
 		config.resolve.fallback = { fs: false };
 		// AUTH_DISABLED: swap @clerk/nextjs for a no-op shim so neither clerk-js
 		// nor ClerkProvider ever contacts the placeholder instance's domain.
+		// Next 16 builds with Turbopack by default; configure both bundlers.
 		if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
+			const clerkAliases = {
+				'@clerk/nextjs/server': './src/clerk-shim-server.mjs',
+				'@clerk/nextjs': './src/clerk-shim.js',
+			};
 			config.resolve.alias = {
 				...config.resolve.alias,
 				'@clerk/nextjs/server': path.resolve(__dirname, 'src/clerk-shim-server.mjs'),
 				'@clerk/nextjs': path.resolve(__dirname, 'src/clerk-shim.js'),
+			};
+			config.turbopack = {
+				...config.turbopack,
+				resolveAlias: {
+					...(config.turbopack && config.turbopack.resolveAlias),
+					...clerkAliases,
+				},
 			};
 		}
 		return config;
