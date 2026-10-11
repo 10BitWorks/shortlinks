@@ -66,8 +66,8 @@ const config = {
 		// Next 16 builds with Turbopack by default; configure both bundlers.
 		if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
 			const clerkAliases = {
-				'@clerk/nextjs/server': './src/clerk-shim-server.mjs',
-				'@clerk/nextjs': './src/clerk-shim.js',
+				'@clerk/nextjs/server': path.resolve(__dirname, 'src/clerk-shim-server.mjs'),
+				'@clerk/nextjs': path.resolve(__dirname, 'src/clerk-shim.js'),
 			};
 			config.resolve.alias = {
 				...config.resolve.alias,
