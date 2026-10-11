@@ -61,6 +61,15 @@ const config = {
 		];
 
 		config.resolve.fallback = { fs: false };
+		// AUTH_DISABLED: swap @clerk/nextjs for a no-op shim so neither clerk-js
+		// nor ClerkProvider ever contacts the placeholder instance's domain.
+		if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
+			config.resolve.alias = {
+				...config.resolve.alias,
+				'@clerk/nextjs/server': path.resolve(__dirname, 'src/clerk-shim-server.mjs'),
+				'@clerk/nextjs': path.resolve(__dirname, 'src/clerk-shim.js'),
+			};
+		}
 		return config;
 	},
 	// This is required to support PostHog trailing slash API requests
