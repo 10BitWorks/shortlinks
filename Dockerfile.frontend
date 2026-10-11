@@ -36,6 +36,7 @@ COPY . .
 # Server-only secrets are validated at build unless skipped; client NEXT_PUBLIC_* values
 # below are the production values that get inlined into the bundle.
 ENV SKIP_ENV_VALIDATION=true \
+    NEXT_PUBLIC_AUTH_DISABLED=true \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production \
     NEXT_PUBLIC_FRONTEND_URL=https://short.10bit.works \
