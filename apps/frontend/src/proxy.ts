@@ -107,15 +107,10 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 		return scanResponse(req);
 	}
 
-	// AUTH_DISABLED: skip Clerk so the middleware doesn't bounce browsers to a
-	// handshake on the placeholder instance's domain (clerk.accounts.dev),
-	// which fails with "unable to attribute this request to an instance".
-	// Auth checks in protected layouts still enforce signed-out state until
-	// the Authentik OIDC port lands.
-	if (process.env.AUTH_DISABLED === 'true') {
-		return NextResponse.next();
-	}
-
+	// With the build-time Clerk shim swapped in (AUTH_DISABLED builds), clerkMiddleware
+	// is a passthrough that still runs the intl + analytics logic below — no Clerk
+	// network calls, no handshake bounce. Auth checks in protected layouts enforce
+	// signed-out state until the Authentik OIDC port lands.
 	return clerkHandler(req, event);
 }
 

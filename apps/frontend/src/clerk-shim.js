@@ -84,8 +84,8 @@ export const auth = async () => ({
 	redirectToSignIn: () => {
 		// Match Clerk's behavior: throws NEXT_REDIRECT so layouts bounce
 		// signed-out users. Sends them to the homepage while auth is offline.
-		const err = new Error('NEXT_REDIRECT;replacement:/;status:307;');
-		err.digest = 'NEXT_REDIRECT;replacement:/;status:307;';
+		const err = new Error('NEXT_REDIRECT;replace:/;307;');
+		err.digest = 'NEXT_REDIRECT;replace:/;307;';
 		throw err;
 	},
 });
