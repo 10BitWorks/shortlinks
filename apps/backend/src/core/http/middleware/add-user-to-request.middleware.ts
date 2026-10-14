@@ -10,9 +10,9 @@ import { type FastifyRequest } from 'fastify';
 import { container } from 'tsyringe';
 import UserSubscriptionRepository from '@/modules/billing/domain/repository/user-subscription.repository';
 import { trackActiveSession, trackExternal } from '@/core/metrics';
+import { UserBanService } from '@/core/auth/user-ban.service';
 
 const USER_PLAN_CACHE_TTL = 300; // 5 minutes
-const USER_BAN_CACHE_TTL = 60; // 1 minute — bans are set manually in Clerk, so propagate quickly
 
 /**
  * Custom user ban (Clerk's native ban is Pro-only). Ban state lives in the
@@ -21,29 +21,7 @@ const USER_BAN_CACHE_TTL = 60; // 1 minute — bans are set manually in Clerk, s
  * Fails open on error so a Clerk outage never locks out the whole app.
  */
 async function resolveUserBanStatus(userId: string): Promise<boolean> {
-	try {
-		const cache = container.resolve(KeyCache);
-		const cacheKey = `user_ban:${userId}`;
-
-		const cached = await cache.get(cacheKey);
-		if (cached !== null) {
-			return cached === 1 || cached === '1';
-		}
-
-		const user = await trackExternal('clerk', 'users.getUser', () =>
-			clerkClient.users.getUser(userId),
-		);
-		const banned = user.privateMetadata?.banned === true;
-
-		await cache.set(cacheKey, banned ? 1 : 0, USER_BAN_CACHE_TTL);
-		return banned;
-	} catch (error) {
-		container.resolve(Logger).error('resolveUserBanStatus.failed', {
-			error: error as Error,
-			userId,
-		});
-		return false;
-	}
+	return container.resolve(UserBanService).isUserBanned(userId);
 }
 
 async function resolveUserPlan(userId: string): Promise<PlanName> {
