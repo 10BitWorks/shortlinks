@@ -48,7 +48,7 @@ export const useClerk = () => ({
 	setActive: async () => {},
 });
 export const useProtect = () => () => true;
-export const useReverification = () => async (fn) => fn();
+export const useReverification = (fn) => async (...args) => (typeof fn === 'function' ? fn(...args) : undefined);
 
 export const SignedIn = ({ children }) => null;
 export const SignedOut = ({ children }) => React.createElement(React.Fragment, null, children);
