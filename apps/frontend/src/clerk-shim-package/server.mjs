@@ -20,15 +20,34 @@ import React from 'react';
 export const ClerkProvider = ({ children }) => children;
 ClerkProvider.displayName = 'ClerkProviderShim';
 
-const signedOut = { userId: null, sessionId: null, actor: null, orgId: null, orgRole: null, orgSlug: null, factorVerificationAge: null };
+const signedOut = {
+	userId: null,
+	sessionId: null,
+	actor: null,
+	orgId: null,
+	orgRole: null,
+	orgSlug: null,
+	factorVerificationAge: null,
+};
 
 /** @returns {{ isLoaded: boolean; isSignedIn: true; user: { emailAddresses: any[]; externalAccounts: any[]; getSessions: () => Promise<any[]>; [key: string]: any } } | { isLoaded: boolean; isSignedIn: false; user: null }} */
 export const useUser = () => ({ isLoaded: true, isSignedIn: false, user: null });
-export const useAuth = () => ({ ...signedOut, isLoaded: true, isSignedIn: false, getToken: async () => null, has: () => false });
+export const useAuth = () => ({
+	...signedOut,
+	isLoaded: true,
+	isSignedIn: false,
+	getToken: async () => null,
+	has: () => false,
+});
 export const useSignIn = () => ({ isLoaded: true, signIn: null, setActive: async () => {} });
 export const useSignUp = () => ({ isLoaded: true, signUp: null, setActive: async () => {} });
 export const useOrganization = () => ({ isLoaded: true, organization: null, membership: null });
-export const useOrganizationList = () => ({ isLoaded: true, userMemberships: { data: [] }, userInvitations: { data: [] }, userSuggestions: { data: [] } });
+export const useOrganizationList = () => ({
+	isLoaded: true,
+	userMemberships: { data: [] },
+	userInvitations: { data: [] },
+	userSuggestions: { data: [] },
+});
 /** @returns {{ isLoaded: boolean; isSignedIn: boolean; session: any }} */
 export const useSession = () => ({ isLoaded: true, isSignedIn: false, session: null });
 export const useSessionList = () => ({ isLoaded: true, sessions: [] });
@@ -47,14 +66,18 @@ export const useClerk = () => ({
 	setActive: async () => {},
 });
 export const useProtect = () => () => true;
-export const useReverification = (fn) => async (...args) => (typeof fn === 'function' ? fn(...args) : undefined);
+export const useReverification =
+	(fn) =>
+	async (...args) =>
+		typeof fn === 'function' ? fn(...args) : undefined;
 
 export const SignedIn = ({ children }) => null;
 export const SignedOut = ({ children }) => React.createElement(React.Fragment, null, children);
 /** @param {{ children?: any; [key: string]: any }} props */
 export const UserButton = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const SignInButton = ({ children }) => React.createElement(React.Fragment, null, children ?? null);
+export const SignInButton = ({ children }) =>
+	React.createElement(React.Fragment, null, children ?? null);
 export const SignUpButton = SignInButton;
 /** @param {{ children?: any; [key: string]: any }} props */
 export const SignOutButton = ({ children }) => null;
@@ -64,7 +87,8 @@ export const SignIn = ({ children }) => null;
 export const SignUp = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
 export const UserProfile = ({ children }) => null;
-export const Protect = ({ children }) => React.createElement(React.Fragment, null, children ?? null);
+export const Protect = ({ children }) =>
+	React.createElement(React.Fragment, null, children ?? null);
 /** @param {{ children?: any; [key: string]: any }} props */
 export const RedirectToSignIn = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
@@ -82,16 +106,24 @@ export const auth = async () => ({
 	redirectToSignIn: () => {
 		// Match Clerk's behavior: throws NEXT_REDIRECT so layouts bounce
 		// signed-out users. Sends them to the homepage while auth is offline.
-		const err = new Error('NEXT_REDIRECT;replace;/;307;');
-		err.digest = 'NEXT_REDIRECT;replace;/;307;';
+		const err = new Error('NEXT_REDIRECT;replace;/auth-offline;307;');
+		err.digest = 'NEXT_REDIRECT;replace;/auth-offline;307;';
 		throw err;
 	},
 });
 
 export const currentUser = async () => null;
-export const clerkClient = async () => ({ users: { getUser: async () => null, getUserList: async () => ({ data: [] }) } });
+export const clerkClient = async () => ({
+	users: { getUser: async () => null, getUserList: async () => ({ data: [] }) },
+});
 export const authMiddleware = () => (req) => undefined;
-export const getAuth = async (req) => ({ ...signedOut, isLoaded: true, isSignedIn: false, getToken: async () => null, has: () => false });
+export const getAuth = async (req) => ({
+	...signedOut,
+	isLoaded: true,
+	isSignedIn: false,
+	getToken: async () => null,
+	has: () => false,
+});
 export const EmailLinkFactorA = 'email_link_factor_a';
 export const EmailLinkFactorB = 'email_link_factor_b';
 export const withClerkMiddleware = (handler) => handler;
