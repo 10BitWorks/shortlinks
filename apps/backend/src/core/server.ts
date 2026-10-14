@@ -9,6 +9,7 @@ import {
 } from './config/constants';
 import fastify, { FastifyListenOptions, type FastifyInstance } from 'fastify';
 import { clerkPlugin, getAuth } from '@clerk/fastify';
+import { oidcAuthPlugin } from './auth/oidc.plugin';
 import {
 	createRequestLogObject,
 	fastifyErrorHandler,
@@ -194,13 +195,25 @@ export class Server {
 			origin: true,
 		});
 
-		await this.server.register(clerkPlugin, {
-			secretKey: env.CLERK_SECRET_KEY,
-			publishableKey: env.CLERK_PUBLISHABLE_KEY,
-			telemetry: {
-				disabled: true,
-			},
-		});
+		// Auth plugin registration based on AUTH_MODE
+		// - 'clerk': Register Clerk Fastify plugin (existing behavior)
+		// - 'oidc': Register Authentik OIDC JWT verification plugin
+		// - 'offline': No extra auth plugin registered (clean anonymous/offline mode)
+		if (env.AUTH_MODE === 'clerk') {
+			await this.server.register(clerkPlugin, {
+				secretKey: env.CLERK_SECRET_KEY,
+				publishableKey: env.CLERK_PUBLISHABLE_KEY,
+				telemetry: {
+					disabled: true,
+				},
+			});
+		} else if (env.AUTH_MODE === 'oidc') {
+			await this.server.register(oidcAuthPlugin, {
+				issuer: env.AUTHENTIK_ISSUER,
+				audience: env.AUTHENTIK_CLIENT_ID,
+				jwksUri: env.AUTHENTIK_JWKS_URI,
+			});
+		}
 
 		await this.server.register(fastifyCookie, {
 			secret: env.COOKIE_SECRET,
@@ -213,9 +226,15 @@ export class Server {
 			await this.server.register(fastifyRateLimit, {
 				hook: 'preHandler',
 				keyGenerator: (request) => {
-					const { userId } = getAuth(request, {
-						acceptsToken: ['session_token', 'api_key'],
-					}) as { userId: string | null };
+					let userId: string | null = null;
+					if (env.AUTH_MODE === 'clerk') {
+						const clerkAuth = getAuth(request, {
+							acceptsToken: ['session_token', 'api_key'],
+						}) as { userId: string | null };
+						userId = clerkAuth.userId;
+					} else {
+						userId = request.user?.id ?? null;
+					}
 
 					const policy = request.routeOptions.config?.rateLimitPolicy ?? RateLimitPolicy.DEFAULT;
 					const userKey = userId ? `user:${userId}` : `anon:${request.clientIp}`;

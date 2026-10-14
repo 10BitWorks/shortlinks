@@ -42,6 +42,16 @@ const server = z.object({
 	SENTRY_ENVIRONMENT: z.enum(['development', 'production']).default('production'),
 	AXIOM_DATASET: z.string().optional(),
 	AXIOM_TOKEN: z.string().optional(),
+	// Auth configuration
+	// IMPORTANT SEMANTICS: default AUTH_MODE is 'clerk' to preserve current deployed behavior exactly.
+	// 'oidc' = Authentik JWT verification via JWKS.
+	// 'offline' = clean no-Clerk anon mode (skips Clerk code paths entirely).
+	AUTH_MODE: z.enum(['clerk', 'offline', 'oidc']).default('clerk'),
+	AUTHENTIK_ISSUER: z.string().optional(),
+	AUTHENTIK_CLIENT_ID: z.string().optional(),
+	// If AUTHENTIK_JWKS_URI is omitted, fallback is `${AUTHENTIK_ISSUER}/jwks/` (or standard `${AUTHENTIK_ISSUER}/.well-known/jwks.json`).
+	// We support direct override or derive from AUTHENTIK_ISSUER.
+	AUTHENTIK_JWKS_URI: z.string().optional(),
 	CLERK_PUBLISHABLE_KEY: z.string(),
 	CLERK_SECRET_KEY: z.string(),
 	CLERK_WEBHOOK_SECRET_KEY: z.string(),

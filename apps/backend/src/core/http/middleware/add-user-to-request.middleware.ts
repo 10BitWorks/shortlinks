@@ -1,4 +1,5 @@
 import { PlanName } from '@/core/config/plan.config';
+import { env } from '@/core/config/env';
 import { type TTokenType } from '@/core/domain/schema/UserSchema';
 import { Logger } from '@/core/logging';
 import { KeyCache } from '@/core/cache';
@@ -71,33 +72,56 @@ async function resolveUserPlan(userId: string): Promise<PlanName> {
 }
 
 export async function addUserToRequestMiddleware(request: FastifyRequest, _reply: unknown) {
-	const auth = getAuth(request, {
-		acceptsToken: ['session_token', 'api_key'],
-	}) as {
-		userId: string | null;
-		tokenType: TTokenType;
-		scopes?: string[];
-	};
+	let accessType: TTokenType | undefined;
 
-	const { userId, tokenType } = auth;
+	if (env.AUTH_MODE === 'clerk') {
+		const auth = getAuth(request, {
+			acceptsToken: ['session_token', 'api_key'],
+		}) as {
+			userId: string | null;
+			tokenType: TTokenType;
+			scopes?: string[];
+		};
 
-	if (userId) {
-		if (await resolveUserBanStatus(userId)) {
-			throw new AccountBannedError(userId);
+		const { userId, tokenType } = auth;
+		accessType = tokenType;
+
+		if (userId) {
+			if (await resolveUserBanStatus(userId)) {
+				throw new AccountBannedError(userId);
+			}
+
+			const plan = await resolveUserPlan(userId);
+			const scopes = tokenType === 'api_key' ? (auth.scopes ?? []) : undefined;
+			request.user = { id: userId, tokenType, plan, scopes };
+			void trackActiveSession(container.resolve(KeyCache).getClient(), userId);
+		} else {
+			request.user = undefined;
 		}
-
-		const plan = await resolveUserPlan(userId);
-		const scopes = tokenType === 'api_key' ? (auth.scopes ?? []) : undefined;
-		request.user = { id: userId, tokenType, plan, scopes };
-		void trackActiveSession(container.resolve(KeyCache).getClient(), userId);
+	} else if (env.AUTH_MODE === 'oidc') {
+		const claims = request.authClaims;
+		if (claims?.sub) {
+			accessType = 'session_token';
+			// Single-tenant 10BitWorks instance: all authenticated Authentik users get PRO plan
+			request.user = {
+				id: `authentik:${claims.sub}`,
+				tokenType: 'session_token',
+				plan: PlanName.PRO,
+				scopes: undefined,
+			};
+			void trackActiveSession(container.resolve(KeyCache).getClient(), request.user.id);
+		} else {
+			request.user = undefined;
+		}
 	} else {
+		// AUTH_MODE === 'offline': skip Clerk completely, zero Clerk code paths
 		request.user = undefined;
 	}
 
 	// don't log health check & uptime kuma
 	if (request.clientIp !== '127.0.0.1' && request.clientIp !== '152.53.13.36') {
 		container.resolve(Logger).info('api.request', {
-			request: createRequestLogObject(request, { accessType: tokenType }),
+			request: createRequestLogObject(request, { accessType }),
 		});
 	}
 }
