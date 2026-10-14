@@ -95,6 +95,7 @@ export const getAuth = async (req) => ({ ...signedOut, isLoaded: true, isSignedI
 export const EmailLinkFactorA = 'email_link_factor_a';
 export const EmailLinkFactorB = 'email_link_factor_b';
 export const withClerkMiddleware = (handler) => handler;
+/** @param {(auth: any, req: any, event: any) => any} handler */
 export const clerkMiddleware = (handler) => (req, event) => handler({}, req, event);
 export const createRouteMatcher = () => () => false;
 
