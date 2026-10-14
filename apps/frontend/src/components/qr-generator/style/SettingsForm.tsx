@@ -55,6 +55,7 @@ export const SettingsForm = () => {
 	// Memoize default values to prevent unnecessary re-renders
 	const defaultValues = useMemo<TQrCodeOptions>(
 		() => ({
+			theme: config.theme ?? '10bit-isometric',
 			width: config.width,
 			height: config.height,
 			margin: config.width > 0 ? Math.round((config.margin / config.width) * 100) : 0,

@@ -66,6 +66,7 @@ describe('createQrCode - Name and Configuration', () => {
 			const customConfig: TCreateQrCodeDto = {
 				...generateQrCodeDto(),
 				config: {
+					theme: '10bit-isometric',
 					width: 500,
 					height: 500,
 					margin: 10,

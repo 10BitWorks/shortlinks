@@ -315,7 +315,13 @@ const RgbaColor = z.object({
 export const ColorOrGradient = z.discriminatedUnion('type', [HexColor, RgbaColor, Gradient]);
 export type TColorOrGradient = z.infer<typeof ColorOrGradient>;
 
+export const QrCodeTheme = z.enum(['standard', '10bit-isometric']);
+export type TQrCodeTheme = z.infer<typeof QrCodeTheme>;
+
 export const QrCodeOptionsSchema = z.object({
+	theme: QrCodeTheme.default('10bit-isometric').describe(
+		'Visual theme for the QR code: standard or 10bit-isometric',
+	),
 	width: z.number().min(0).describe('QR code width in pixels'),
 	height: z.number().min(0).describe('QR code height in pixels'),
 	margin: z.number().min(0).describe('Quiet zone margin around the QR code in pixels'),

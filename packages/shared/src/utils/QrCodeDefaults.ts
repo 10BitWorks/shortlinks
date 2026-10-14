@@ -1,6 +1,7 @@
 import { type TQrCodeOptions } from '../schemas/QrCode';
 
 export const QrCodeDefaults: TQrCodeOptions = {
+	theme: '10bit-isometric',
 	width: 1000,
 	height: 1000,
 	image: '',
