@@ -2,12 +2,8 @@ import { withSentryConfig } from '@sentry/nextjs';
 import { withAxiom } from 'next-axiom';
 import { env } from './src/env.js';
 import createNextIntlPlugin from 'next-intl/plugin';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createMDX } from 'fumadocs-mdx/next';
 import bundleAnalyzer from '@next/bundle-analyzer';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
 	enabled: process.env.ANALYZE === 'true',
@@ -61,40 +57,10 @@ const config = {
 		];
 
 		config.resolve.fallback = { fs: false };
-		// AUTH_DISABLED: swap @clerk/nextjs for a no-op shim so neither clerk-js
-		// nor ClerkProvider ever contacts the placeholder instance's domain.
-		// Next 16 builds with Turbopack by default; configure both bundlers.
-		if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
-			const clerkAliases = {
-				'@clerk/nextjs/server': path.resolve(__dirname, 'src/clerk-shim-server.mjs'),
-				'@clerk/nextjs': path.resolve(__dirname, 'src/clerk-shim.js'),
-			};
-			config.resolve.alias = {
-				...config.resolve.alias,
-				'@clerk/nextjs/server': path.resolve(__dirname, 'src/clerk-shim-server.mjs'),
-				'@clerk/nextjs': path.resolve(__dirname, 'src/clerk-shim.js'),
-			};
-			config.turbopack = {
-				...config.turbopack,
-				resolveAlias: {
-					...(config.turbopack && config.turbopack.resolveAlias),
-					...clerkAliases,
-				},
-			};
-		}
 		return config;
 	},
 	// This is required to support PostHog trailing slash API requests
 	skipTrailingSlashRedirect: true,
-	async rewrites() {
-		return [
-			{
-				source: '/__clerk-js/:path*',
-				// Muss zur SDK-Generation passen: @clerk/nextjs 7.x lädt clerk-js major 6
-				destination: 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@6/:path*',
-			},
-		];
-	},
 	images: {
 		remotePatterns: [
 			{
