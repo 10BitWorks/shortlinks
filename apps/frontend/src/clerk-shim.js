@@ -23,7 +23,7 @@ ClerkProvider.displayName = 'ClerkProviderShim';
 
 const signedOut = { userId: null, sessionId: null, actor: null, orgId: null, orgRole: null, orgSlug: null, factorVerificationAge: null };
 
-/** @returns {{ isLoaded: boolean; isSignedIn: boolean; user: { emailAddresses: any[]; externalAccounts: any[]; getSessions: () => Promise<any[]>; [key: string]: any } | null }} */
+/** @returns {{ isLoaded: boolean; isSignedIn: true; user: { emailAddresses: any[]; externalAccounts: any[]; getSessions: () => Promise<any[]>; [key: string]: any } } | { isLoaded: boolean; isSignedIn: false; user: null }} */
 export const useUser = () => ({ isLoaded: true, isSignedIn: false, user: null });
 export const useAuth = () => ({ ...signedOut, isLoaded: true, isSignedIn: false, getToken: async () => null, has: () => false });
 export const useSignIn = () => ({ isLoaded: true, signIn: null, setActive: async () => {} });
