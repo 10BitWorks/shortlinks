@@ -78,6 +78,39 @@ pnpm run db:generate-migration   # Generate new migration from schema changes
 pnpm run studio                  # Open Drizzle Studio
 ```
 
+## Authentication (AUTH_MODE)
+
+Three-way auth seam across frontend and backend. Enables seamless transition from SaaS Clerk to self-hosted Authentik OIDC or offline anonymous mode with zero call-site modifications.
+
+### Operational Modes
+- `clerk` (default): Legacy Clerk SaaS path (`@clerk/fastify` + `@clerk/nextjs`). Uses dummy/placeholder keys in current deployment.
+- `offline`: Clean no-Clerk anonymous mode. Public endpoints work (`/u/[shortCode]` redirects, basic QR generation). Protected endpoints return 401 (`request.user = undefined`).
+- `oidc`: Authentik OIDC via `jose` remote JWKS. Maps user ID to `authentik:<sub>` with automatic `PlanName.PRO` access (single-tenant 10BitWorks instance).
+
+### Environment Variables
+- `AUTH_MODE`: `clerk` | `offline` | `oidc` (default: `clerk`).
+- `AUTHENTIK_ISSUER`: OIDC provider URL (e.g. `https://auth.10bitworks.org/application/o/shortlinks/`).
+- `AUTHENTIK_CLIENT_ID`: OAuth2 Client ID (frontend + backend).
+- `AUTHENTIK_CLIENT_SECRET`: OAuth2 Client Secret (frontend token exchange only).
+- `AUTHENTIK_JWKS_URI`: Optional explicit JWKS endpoint; fallback defaults to `${AUTHENTIK_ISSUER}/jwks/`.
+
+### Frontend Build-Time File Swap (`Dockerfile.frontend`)
+Build-time seam replacing `@clerk/nextjs` in `node_modules` before Next.js build:
+- `AUTH_MODE=oidc`: Swaps `apps/frontend/src/auth-adapter/` into `@clerk/nextjs`.
+- `NEXT_PUBLIC_AUTH_DISABLED=true` (and not OIDC): Swaps `apps/frontend/src/clerk-shim-package/` into `@clerk/nextjs`.
+- Neither: Retains vanilla `@clerk/nextjs`.
+
+### OIDC PKCE Routes & Adapter
+- `/api/auth/login`: Generates PKCE verifier (S256 challenge) and random CSRF state in temporary httpOnly cookies (`/api/auth/callback` path), redirects to `${issuer}/authorize/`. `SignInButton` / `SignUpButton` navigate here.
+- `/api/auth/callback`: Validates state and verifier, exchanges code at `${issuer}/token/`, sets session cookie `shortlinks_oidc_session` (httpOnly, base64 JSON, `exp`-checked), redirects to `/`.
+- `/api/auth/me`: Reads session cookie, validates expiration, returns user claims to client `ClerkProvider` context.
+- `/api/auth/logout`: Clears `shortlinks_oidc_session` and redirects to `${issuer}/end-session/`.
+- Server helper `server.mjs`: `await auth()` reads `shortlinks_oidc_session`, validates `exp`, returns `userId: "authentik:<sub>"`. Unauthenticated calls bounce to `/auth-offline` via NEXT_REDIRECT digest.
+
+### Rollback & Deployment Status
+- Rollback to `offline`: Single env flip (`AUTH_MODE=offline`, `NEXT_PUBLIC_AUTH_DISABLED=true`).
+- **Current Status / TODO**: The deployment currently runs in anonymous mode (frontend shim, backend clerk-with-placeholder-keys); the deployment flip to `AUTH_MODE=oidc` awaits Authentik application and secret creation.
+
 ## Architecture
 
 ### Backend (`apps/backend`)

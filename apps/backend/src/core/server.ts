@@ -314,7 +314,9 @@ export class Server {
 		await this.server.register(fastifyHelmet);
 
 		registerRoutes(this.server, HealthController, API_BASE_PATH);
-		registerRoutes(this.server, ClerkWebhookController, API_BASE_PATH);
+		if (env.AUTH_MODE === 'clerk') {
+			registerRoutes(this.server, ClerkWebhookController, API_BASE_PATH);
+		}
 
 		// Stripe webhook needs the raw request body (string) for HMAC signature
 		// verification. Register it in an encapsulated scope that overrides the

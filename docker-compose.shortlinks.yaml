@@ -9,8 +9,19 @@
 # Sept 2026. The access key + bucket are auto-bootstrapped at first start via
 # GARAGE_DEFAULT_* env vars (needs garage >= v2.3).
 #
-# Auth status: Clerk placeholder keys — sign-in will NOT work until the
-# Authentik OIDC port lands. Public redirects (/u/<code>) need no auth.
+# Auth status & AUTH_MODE Matrix:
+#   - clerk   : Legacy Clerk SaaS path. Uses format-valid dummy keys in current deploy.
+#   - offline : Clean no-Clerk anonymous mode. Public redirects (/u/<code>) work;
+#               protected endpoints return 401 (request.user undefined).
+#   - oidc    : Authentik OIDC via jose JWKS. Maps user to `authentik:<sub>` with PRO plan.
+#               Frontend uses build-time swap (Dockerfile.frontend AUTH_MODE=oidc) and
+#               PKCE code exchange (/api/auth/*) with `shortlinks_oidc_session` cookie.
+#
+# Current Status: Deployment currently runs anonymous mode (frontend clerk-shim,
+# backend clerk-with-placeholder-keys). The deployment flip to AUTH_MODE=oidc awaits
+# Authentik OAuth2 application creation (client ID/secret + issuer). Rollback is a
+# single env toggle to AUTH_MODE=offline / NEXT_PUBLIC_AUTH_DISABLED=true.
+#
 # Billing/Stripe, Umami analytics, Sentry, Cloudflare custom-domains: placeholders.
 
 services:
@@ -34,7 +45,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
     volumes:
       - shortlinks-redis:/data
 
@@ -62,25 +73,25 @@ services:
     environment:
       NODE_ENV: production
       API_HOST: 0.0.0.0
-      API_PORT: "5001"
+      API_PORT: '5001'
       BACKEND_URL: https://api.10bit.works
       BASE_URL: https://api.10bit.works
       FRONTEND_URL: https://short.10bit.works
       SHORT_URL_BASE_URL: https://short.10bit.works
       DB_HOST: db
-      DB_PORT: "3306"
+      DB_PORT: '3306'
       DB_USER: shortlinks
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: shortlinks
-      DB_MIGRATING: "false"
+      DB_MIGRATING: 'false'
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
       ANALYTICS_ENCRYPTION_KEY: ${ANALYTICS_ENCRYPTION_KEY}
-      DISABLE_RATE_LIMITING: "false"
+      DISABLE_RATE_LIMITING: 'false'
       SMTP_HOST: smtp.placeholder.invalid
-      SMTP_PORT: "587"
+      SMTP_PORT: '587'
       SMTP_USER: placeholder
       SMTP_PASS: ${PLACEHOLDER_SECRET}
       S3_ENDPOINT: http://garage:3900
@@ -109,7 +120,7 @@ services:
       STRIPE_PRO_PRICE_ID_ANNUAL: price_placeholder
       STRIPE_ADDON_DOMAIN_PRICE_ID_MONTHLY: price_placeholder
       STRIPE_ADDON_DOMAIN_PRICE_ID_ANNUAL: price_placeholder
-      GOOGLE_WEB_RISK_API_KEY: ""
+      GOOGLE_WEB_RISK_API_KEY: ''
       URL_SAFETY_RECHECK_MODE: shadow
       LOG_LEVEL: info
       TZ: America/Chicago
@@ -121,7 +132,7 @@ services:
       - backend
     environment:
       NODE_ENV: production
-      PORT: "3000"
+      PORT: '3000'
       NEXT_PUBLIC_FRONTEND_URL: https://short.10bit.works
       NEXT_PUBLIC_SHORT_URL_DOMAIN: https://short.10bit.works
       NEXT_PUBLIC_API_URL: https://api.10bit.works
@@ -139,8 +150,8 @@ services:
       # Skip Clerk in middleware + ClerkProvider while placeholder keys are in
       # place — otherwise browsers get bounced to the fake instance's handshake.
       # NEXT_PUBLIC_ variant is inlined at build time; both must stay in sync.
-      AUTH_DISABLED: "true"
-      NEXT_PUBLIC_AUTH_DISABLED: "true"
+      AUTH_DISABLED: 'true'
+      NEXT_PUBLIC_AUTH_DISABLED: 'true'
       AXIOM_TOKEN: placeholder-no-axiom
       AXIOM_DATASET: shortlinks
       NEXT_PUBLIC_GOOGLE_API_KEY: placeholder
@@ -148,8 +159,8 @@ services:
       NEXT_PUBLIC_STRIPE_PRO_PRICE_ID_ANNUAL: price_placeholder
       NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_MONTHLY: price_placeholder
       NEXT_PUBLIC_STRIPE_ADDON_DOMAIN_PRICE_ID_ANNUAL: price_placeholder
-      NEXT_PUBLIC_POSTHOG_KEY: ""
-      NEXT_PUBLIC_POSTHOG_HOST: ""
+      NEXT_PUBLIC_POSTHOG_KEY: ''
+      NEXT_PUBLIC_POSTHOG_HOST: ''
       LOG_LEVEL: info
       TZ: America/Chicago
 
