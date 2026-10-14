@@ -18,6 +18,7 @@ export const UserAvatar = ({ children }) => null;
 
 import React from 'react';
 
+/** @param {{ children?: any; [key: string]: any }} props */
 export const ClerkProvider = ({ children }) => children;
 ClerkProvider.displayName = 'ClerkProviderShim';
 
