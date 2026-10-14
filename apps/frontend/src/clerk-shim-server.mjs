@@ -20,19 +20,21 @@ ClerkProvider.displayName = 'ClerkProviderShim';
 
 const signedOut = { userId: null, sessionId: null, actor: null, orgId: null, orgRole: null, orgSlug: null, factorVerificationAge: null };
 
+/** @returns {{ isLoaded: boolean; isSignedIn: boolean; user: any }} */
 export const useUser = () => ({ isLoaded: true, isSignedIn: false, user: null });
 export const useAuth = () => ({ ...signedOut, isLoaded: true, isSignedIn: false, getToken: async () => null, has: () => false });
 export const useSignIn = () => ({ isLoaded: true, signIn: null, setActive: async () => {} });
 export const useSignUp = () => ({ isLoaded: true, signUp: null, setActive: async () => {} });
 export const useOrganization = () => ({ isLoaded: true, organization: null, membership: null });
 export const useOrganizationList = () => ({ isLoaded: true, userMemberships: { data: [] }, userInvitations: { data: [] }, userSuggestions: { data: [] } });
+/** @returns {{ isLoaded: boolean; isSignedIn: boolean; session: any }} */
 export const useSession = () => ({ isLoaded: true, isSignedIn: false, session: null });
 export const useSessionList = () => ({ isLoaded: true, sessions: [] });
 export const useClerk = () => ({
 	...signedOut,
-	openSignIn: () => {},
-	openSignUp: () => {},
-	openUserProfile: () => {},
+	openSignIn: (opts) => {},
+	openSignUp: (opts) => {},
+	openUserProfile: (opts) => {},
 	closeSignIn: () => {},
 	closeSignUp: () => {},
 	closeUserProfile: () => {},
