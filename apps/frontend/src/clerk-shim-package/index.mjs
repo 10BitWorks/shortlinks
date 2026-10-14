@@ -64,6 +64,7 @@ export const auth = async () => ({
 	...signedOut,
 	isLoaded: true,
 	isSignedIn: false,
+	isAuthenticated: false,
 	getToken: async () => null,
 	has: () => false,
 	protect: async () => {},
@@ -83,6 +84,7 @@ export const getAuth = async (req) => ({ ...signedOut, isLoaded: true, isSignedI
 export const EmailLinkFactorA = 'email_link_factor_a';
 export const EmailLinkFactorB = 'email_link_factor_b';
 export const withClerkMiddleware = (handler) => handler;
+export const clerkMiddleware = (handler) => (req, event) => handler({}, req, event);
 export const createRouteMatcher = () => () => false;
 
 const ClerkShim = { Provider: ClerkProvider };

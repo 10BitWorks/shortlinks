@@ -59,7 +59,9 @@ ENV SKIP_ENV_VALIDATION=true \
     AXIOM_DATASET=shortlinks
 RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
 	&& if [ "$NEXT_PUBLIC_AUTH_DISABLED" = "true" ]; then \
-	CLERK_PKG=$(dirname $(dirname $(node -e "console.log(require.resolve('@clerk/nextjs/package.json', {paths:['/app/apps/frontend']}))"))); \
+	CLERK_PKG=$(readlink -f /app/apps/frontend/node_modules/@clerk/nextjs); \
+	echo "clerk-shim: swapping into $CLERK_PKG"; \
+	test -f "$CLERK_PKG/package.json" || { echo "clerk-shim: FATAL - package dir not found at $CLERK_PKG"; exit 1; }; \
 	cp /app/apps/frontend/src/clerk-shim-package/package.json "$CLERK_PKG/package.json"; \
 	cp /app/apps/frontend/src/clerk-shim-package/index.mjs "$CLERK_PKG/index.mjs"; \
 	cp /app/apps/frontend/src/clerk-shim-package/server.mjs "$CLERK_PKG/server.mjs"; \
