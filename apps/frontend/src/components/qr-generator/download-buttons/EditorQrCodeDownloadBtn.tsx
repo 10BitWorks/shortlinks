@@ -12,7 +12,11 @@ import { useEffect, useState } from 'react';
 import { type TFileExtension, type TQrCodeWithRelationsResponseDto } from '@shared/schemas';
 import { useTranslations } from 'next-intl';
 import { useQrCodeGeneratorStore } from '@/components/provider/QrCodeConfigStoreProvider';
-import { getQrCodeStylingOptions } from '@/lib/qr-code-helpers';
+import {
+	getQrCodeStylingOptions,
+	downloadIsometricQrCode,
+	getQrCodePayload,
+} from '@/lib/qr-code-helpers';
 import type QRCodeStylingType from 'qr-code-styling';
 
 let QRCodeStyling: typeof QRCodeStylingType;
@@ -51,6 +55,19 @@ export const EditorQrCodeDownloadBtn = ({
 	}, [config, content, initialQrCode.qrCodeData]);
 
 	const onDownloadClick = async (fileExt: TFileExtension) => {
+		if (config.theme === '10bit-isometric') {
+			const payload = getQrCodePayload(content, {
+				qrCodeData: initialQrCode.qrCodeData,
+			});
+			await downloadIsometricQrCode({
+				config,
+				payload,
+				name: initialQrCode.name || 'qr-code',
+				extension: fileExt,
+			});
+			return;
+		}
+
 		if (!qrCodeInstance) return;
 
 		await qrCodeInstance.download({

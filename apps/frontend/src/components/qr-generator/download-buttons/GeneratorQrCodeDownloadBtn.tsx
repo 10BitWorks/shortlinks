@@ -24,6 +24,8 @@ import {
 	getQrCodeStylingOptions,
 	isContentAtDefault,
 	hasQrCodeChanged,
+	getQrCodePayload,
+	downloadIsometricQrCode,
 } from '@/lib/qr-code-helpers';
 import type QRCodeStylingType from 'qr-code-styling';
 
@@ -63,10 +65,11 @@ export const GeneratorQrCodeDownloadBtn = ({
 	}, [config, content, shortUrl]);
 
 	const onDownloadClick = async (fileExt: TFileExtension) => {
-		if (!qrCodeInstance) return;
+		if (config.theme !== '10bit-isometric' && !qrCodeInstance) return;
 
 		const currentQrCode = { name: name || null, config, content };
 		const hasChanged = hasQrCodeChanged(currentQrCode, latestQrCode);
+		let latestData: string | null = null;
 
 		if (saveOnDownload && hasChanged) {
 			try {
@@ -135,20 +138,39 @@ export const GeneratorQrCodeDownloadBtn = ({
 
 				// Update instance with the stored qrCodeData (has correct custom domain)
 				if (savedQrCode?.qrCodeData) {
-					const updatedOptions = getQrCodeStylingOptions(config, content, {
-						qrCodeData: savedQrCode.qrCodeData,
-					});
-					qrCodeInstance.update(updatedOptions);
+					latestData = savedQrCode.qrCodeData;
+					if (qrCodeInstance) {
+						const updatedOptions = getQrCodeStylingOptions(config, content, {
+							qrCodeData: savedQrCode.qrCodeData,
+						});
+						qrCodeInstance.update(updatedOptions);
+					}
 				}
 			} catch {
 				// silent catch - error already handled in onError
 			}
 		}
 
-		await qrCodeInstance.download({
-			name: 'qr-code',
-			extension: fileExt,
-		});
+		if (config.theme === '10bit-isometric') {
+			const payload = getQrCodePayload(content, {
+				qrCodeData: latestData,
+				shortUrl,
+			});
+			await downloadIsometricQrCode({
+				config,
+				payload,
+				name: 'qr-code',
+				extension: fileExt,
+			});
+			return;
+		}
+
+		if (qrCodeInstance) {
+			await qrCodeInstance.download({
+				name: 'qr-code',
+				extension: fileExt,
+			});
+		}
 	};
 
 	const isDisabled =
