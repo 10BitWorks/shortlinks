@@ -611,6 +611,12 @@
 			"tabGeneral": "General",
 			"tabShape": "Forma",
 			"tabIcon": "Icono",
+			"theme": {
+				"label": "Tema",
+				"placeholder": "Seleccionar un tema",
+				"optionLabelIsometric": "10Bit Isométrico",
+				"optionLabelStandard": "Estándar"
+			},
 			"sizeLabel": "Tamaño (Calidad)",
 			"borderSpacingLabel": "Espaciado del borde",
 			"backgroundLabel": "Fondo",

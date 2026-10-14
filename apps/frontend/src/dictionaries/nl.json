@@ -611,6 +611,12 @@
 			"tabGeneral": "Algemeen",
 			"tabShape": "Vorm",
 			"tabIcon": "Icoon",
+			"theme": {
+				"label": "Thema",
+				"placeholder": "Selecteer een thema",
+				"optionLabelIsometric": "10Bit Isometrisch",
+				"optionLabelStandard": "Standaard"
+			},
 			"sizeLabel": "Grootte (Kwaliteit)",
 			"borderSpacingLabel": "Randafstand",
 			"backgroundLabel": "Achtergrond",

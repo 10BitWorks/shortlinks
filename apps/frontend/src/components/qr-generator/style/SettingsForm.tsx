@@ -90,6 +90,7 @@ export const SettingsForm = () => {
 		(data: TQrCodeOptions) => {
 			const updatedConfig = {
 				...config,
+				theme: data.theme,
 				width: Number(data.width),
 				height: Number(data.height),
 				margin: Math.round((Number(data.width) / 100) * data.margin),
@@ -221,6 +222,36 @@ export const SettingsForm = () => {
 
 					<TabsContent value="general" className="mt-0">
 						<div className="flex flex-col flex-wrap space-y-6 p-2">
+							<FormField
+								control={form.control}
+								name="theme"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>{t('theme.label')}</FormLabel>
+										<FormControl>
+											<Select
+												onValueChange={(val) => {
+													field.onChange(val);
+													handleChange(form.getValues());
+												}}
+												value={field.value ?? '10bit-isometric'}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder={t('theme.placeholder')} />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="10bit-isometric">
+														{t('theme.optionLabelIsometric')}
+													</SelectItem>
+													<SelectItem value="standard">{t('theme.optionLabelStandard')}</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
 							<FormField
 								control={form.control}
 								name="width"

@@ -611,6 +611,12 @@
 			"tabGeneral": "Общие",
 			"tabShape": "Форма",
 			"tabIcon": "Иконка",
+			"theme": {
+				"label": "Тема",
+				"placeholder": "Выберите тему",
+				"optionLabelIsometric": "10Bit Изометрическая",
+				"optionLabelStandard": "Стандартная"
+			},
 			"sizeLabel": "Размер (Качество)",
 			"borderSpacingLabel": "Отступ от границы",
 			"backgroundLabel": "Фон",

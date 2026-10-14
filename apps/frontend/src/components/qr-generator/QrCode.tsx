@@ -6,6 +6,7 @@ import { cn, createLinkFromShortUrl } from '@/lib/utils';
 import {
 	convertQRCodeDataToStringByType,
 	convertQrCodeOptionsToLibraryOptions,
+	generateIsometricQrSvg,
 	isDynamic,
 	type TQrCode,
 	type TShortUrlResponseDto,
@@ -60,14 +61,17 @@ function getCustomDomainKey(props: QrCodeProps): string | null {
 
 function areQrCodePropsEqual(prev: QrCodeProps, next: QrCodeProps) {
 	if (getCustomDomainKey(prev) !== getCustomDomainKey(next)) return false;
+	if (prev.qrCode.config.theme !== next.qrCode.config.theme) return false;
 
-	const optionsPrev: Options = {
+	const optionsPrev = {
 		...convertQrCodeOptionsToLibraryOptions(prev.qrCode.config),
+		theme: prev.qrCode.config.theme,
 		data: getQrCodeData(prev),
 	};
 
-	const optionsNext: Options = {
+	const optionsNext = {
 		...convertQrCodeOptionsToLibraryOptions(next.qrCode.config),
+		theme: next.qrCode.config.theme,
 		data: getQrCodeData(next),
 	};
 
@@ -84,39 +88,97 @@ function QrCode({
 	const { link: resolvedShortUrl } = useShortUrlLink(shortUrl);
 	const { link: shortUrlDisplay } = useShortUrlLink(shortUrl, true);
 
-	const options: Options = useMemo(() => {
-		// Use stored qrCodeData if available (has correct custom domain baked in)
-		const data =
+	const isIsometric = qrCode.config.theme === '10bit-isometric';
+
+	const qrData = useMemo(() => {
+		return (
 			qrCode.qrCodeData ??
 			((isDynamic(qrCode.content) && resolvedShortUrl
 				? convertQRCodeDataToStringByType(qrCode.content, resolvedShortUrl)
 				: convertQRCodeDataToStringByType(qrCode.content)) ||
-				'https://qrcodly.de');
+				'https://qrcodly.de')
+		);
+	}, [qrCode.content, qrCode.qrCodeData, resolvedShortUrl]);
 
+	const options: Options = useMemo(() => {
 		return {
 			...convertQrCodeOptionsToLibraryOptions(qrCode.config),
-			data,
+			data: qrData,
 		};
-	}, [qrCode.config, qrCode.content, qrCode.qrCodeData, resolvedShortUrl]);
+	}, [qrCode.config, qrData]);
+
 	const [qrCodeInstance, setQrCode] = useState<QRCodeStyling>();
 	const ref = useRef<HTMLDivElement>(null);
 
+	// In isometric mode: generate SVG directly and inject into container
+	// In standard mode: instantiate/update QRCodeStyling and clean up container
 	useEffect(() => {
-		setQrCode(new QRCodeStyling(options));
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+		if (!ref.current) return;
 
-	useEffect(() => {
-		if (ref.current) {
-			qrCodeInstance?.append(ref.current);
+		if (isIsometric) {
+			// Clear any previous QRCodeStyling canvas/svg elements
+			ref.current.innerHTML = '';
+
+			const dotsStyle = qrCode.config.dotsOptions?.style;
+			const fgColor =
+				dotsStyle?.type === 'hex' || dotsStyle?.type === 'rgba'
+					? dotsStyle.value
+					: dotsStyle?.type === 'gradient'
+						? (dotsStyle.colorStops?.[0]?.color ?? '#000000')
+						: '#000000';
+
+			const bgStyle = qrCode.config.backgroundOptions?.style;
+			const bgColor =
+				bgStyle?.type === 'hex' || bgStyle?.type === 'rgba'
+					? bgStyle.value
+					: bgStyle?.type === 'gradient'
+						? (bgStyle.colorStops?.[0]?.color ?? null)
+						: null;
+
+			const margin = qrCode.config.margin;
+			const quietZone =
+				typeof margin === 'number' && margin > 0 ? Math.max(0, Math.round(margin / 20)) : 4;
+
+			try {
+				const svg = generateIsometricQrSvg(qrData, {
+					fgColor,
+					bgColor,
+					quietZone,
+					ecc: 'high',
+				});
+				if (ref.current) {
+					ref.current.innerHTML = svg;
+				}
+			} catch (e) {
+				console.error('Failed to generate isometric QR SVG:', e);
+			}
+
+			return () => {
+				if (ref.current) {
+					ref.current.innerHTML = '';
+				}
+			};
+		} else {
+			// Standard mode
+			ref.current.innerHTML = '';
+			const instance = new QRCodeStyling(options);
+			setQrCode(instance);
+			instance.append(ref.current);
+
+			return () => {
+				if (ref.current) {
+					ref.current.innerHTML = '';
+				}
+			};
 		}
-	}, [qrCodeInstance, ref]);
+	}, [isIsometric, qrCode.config, qrData]);
 
+	// Update standard QRCodeStyling instance if options change while in standard mode
 	useEffect(() => {
-		if (!qrCodeInstance) return;
+		if (isIsometric || !qrCodeInstance) return;
 
-		qrCodeInstance?.update(options);
-	}, [qrCodeInstance, options]);
+		qrCodeInstance.update(options);
+	}, [isIsometric, qrCodeInstance, options]);
 
 	return (
 		<div className="flex flex-col">

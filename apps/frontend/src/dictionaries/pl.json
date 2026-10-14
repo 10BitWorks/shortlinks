@@ -611,6 +611,12 @@
 			"tabGeneral": "Ogólne",
 			"tabShape": "Kształt",
 			"tabIcon": "Ikona",
+			"theme": {
+				"label": "Motyw",
+				"placeholder": "Wybierz motyw",
+				"optionLabelIsometric": "10Bit Izometryczny",
+				"optionLabelStandard": "Standardowy"
+			},
 			"sizeLabel": "Rozmiar (Jakość)",
 			"borderSpacingLabel": "Odstępy od krawędzi",
 			"backgroundLabel": "Tło",
