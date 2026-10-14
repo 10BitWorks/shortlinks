@@ -6,7 +6,7 @@ export const Show = ({ when, children }) => {
 	return null;
 };
 /** @param {{ children?: any; [key: string]: any }} props */
-export const UserAvatar = () => null;
+export const UserAvatar = ({ children }) => null;
 
 // Build-time shim for @clerk/nextjs, swapped in via next.config.mjs when
 // NEXT_PUBLIC_AUTH_DISABLED=true. Keeps every `useUser`/`useAuth`/`auth()`
@@ -51,23 +51,23 @@ export const useReverification = () => async (fn) => fn();
 export const SignedIn = ({ children }) => null;
 export const SignedOut = ({ children }) => React.createElement(React.Fragment, null, children);
 /** @param {{ children?: any; [key: string]: any }} props */
-export const UserButton = () => null;
+export const UserButton = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
 export const SignInButton = ({ children }) => React.createElement(React.Fragment, null, children ?? null);
 export const SignUpButton = SignInButton;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const SignOutButton = () => null;
+export const SignOutButton = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const SignIn = () => null;
+export const SignIn = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const SignUp = () => null;
+export const SignUp = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const UserProfile = () => null;
+export const UserProfile = ({ children }) => null;
 export const Protect = ({ children }) => React.createElement(React.Fragment, null, children ?? null);
 /** @param {{ children?: any; [key: string]: any }} props */
-export const RedirectToSignIn = () => null;
+export const RedirectToSignIn = ({ children }) => null;
 /** @param {{ children?: any; [key: string]: any }} props */
-export const RedirectToSignUp = () => null;
+export const RedirectToSignUp = ({ children }) => null;
 
 // Server-side helper (dashboard layouts call `await auth()`).
 export const auth = async () => ({
