@@ -35,9 +35,11 @@ export const LoginRequiredDialog = ({
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel>{t('cancelBtn')}</AlertDialogCancel>
-					<SignInButton signUpForceRedirectUrl={`/${locale}/signup-success`}>
-						<AlertDialogAction>{t('loginBtn')}</AlertDialogAction>
-					</SignInButton>
+					{process.env.NEXT_PUBLIC_AUTH_DISABLED !== 'true' && (
+						<SignInButton signUpForceRedirectUrl={`/${locale}/signup-success`}>
+							<AlertDialogAction>{t('loginBtn')}</AlertDialogAction>
+						</SignInButton>
+					)}
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

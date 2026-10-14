@@ -36,6 +36,9 @@ export const ProCTA = ({
 	// Not authenticated - carry the Pro intent through auth so users land in
 	// checkout instead of on the dashboard after signing in/up
 	if (!isAuthenticated) {
+		if (process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true') {
+			return null;
+		}
 		return (
 			<SignInButton
 				forceRedirectUrl={`/${locale}/upgrade?period=${planPeriod}`}

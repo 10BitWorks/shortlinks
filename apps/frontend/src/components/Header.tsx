@@ -231,11 +231,13 @@ export default function Header({
 						>
 							{t('plansBtn')}
 						</Link>
-						<Show when="signed-out">
-							<SignInButton signUpForceRedirectUrl={`/${locale}/signup-success`}>
-								<Button>{t('signInBtn')}</Button>
-							</SignInButton>
-						</Show>
+						{process.env.NEXT_PUBLIC_AUTH_DISABLED !== 'true' && (
+							<Show when="signed-out">
+								<SignInButton signUpForceRedirectUrl={`/${locale}/signup-success`}>
+									<Button>{t('signInBtn')}</Button>
+								</SignInButton>
+							</Show>
+						)}
 						<Show when="signed-in">
 							{!hideDashboardLink && (
 								<div className="flex items-center gap-2">
