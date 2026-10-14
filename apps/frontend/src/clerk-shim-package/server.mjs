@@ -48,6 +48,7 @@ export const useReverification = () => async (fn) => fn();
 export const SignedIn = ({ children }) => null;
 export const SignedOut = ({ children }) => React.createElement(React.Fragment, null, children);
 export const UserButton = () => null;
+/** @param {{ children?: any; [key: string]: any }} props */
 export const SignInButton = ({ children }) => React.createElement(React.Fragment, null, children ?? null);
 export const SignUpButton = SignInButton;
 export const SignOutButton = () => null;
