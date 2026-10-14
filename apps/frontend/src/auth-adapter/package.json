@@ -1,0 +1,15 @@
+{
+	"name": "@clerk/nextjs",
+	"version": "7.5.19-oidc-adapter",
+	"description": "Authentik OIDC adapter replacing @clerk/nextjs",
+	"sideEffects": false,
+	"exports": {
+		".": "./index.mjs",
+		"./server": "./server.mjs",
+		"./errors": "./index.mjs",
+		"./types": "./index.mjs",
+		"./package.json": "./package.json"
+	},
+	"main": "index.mjs",
+	"types": "index.mjs"
+}

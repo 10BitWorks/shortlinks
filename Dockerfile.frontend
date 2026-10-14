@@ -36,7 +36,9 @@ COPY --from=deps /app /app
 COPY . .
 # Server-only secrets are validated at build unless skipped; client NEXT_PUBLIC_* values
 # below are the production values that get inlined into the bundle.
-ENV SKIP_ENV_VALIDATION=true \
+ARG AUTH_MODE=offline
+ENV AUTH_MODE=${AUTH_MODE} \
+    SKIP_ENV_VALIDATION=true \
     NEXT_PUBLIC_AUTH_DISABLED=true \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production \
@@ -58,7 +60,14 @@ ENV SKIP_ENV_VALIDATION=true \
     AXIOM_TOKEN= \
     AXIOM_DATASET=shortlinks
 RUN pnpm --filter @shared/schemas --filter @qrcodly/db run build \
-	&& if [ "$NEXT_PUBLIC_AUTH_DISABLED" = "true" ]; then \
+	&& if [ "$AUTH_MODE" = "oidc" ]; then \
+	CLERK_PKG=$(readlink -f /app/apps/frontend/node_modules/@clerk/nextjs); \
+	echo "auth-adapter: swapping OIDC adapter into $CLERK_PKG"; \
+	test -f "$CLERK_PKG/package.json" || { echo "auth-adapter: FATAL - package dir not found at $CLERK_PKG"; exit 1; }; \
+	cp /app/apps/frontend/src/auth-adapter/package.json "$CLERK_PKG/package.json"; \
+	cp /app/apps/frontend/src/auth-adapter/index.mjs "$CLERK_PKG/index.mjs"; \
+	cp /app/apps/frontend/src/auth-adapter/server.mjs "$CLERK_PKG/server.mjs"; \
+	elif [ "$NEXT_PUBLIC_AUTH_DISABLED" = "true" ]; then \
 	CLERK_PKG=$(readlink -f /app/apps/frontend/node_modules/@clerk/nextjs); \
 	echo "clerk-shim: swapping into $CLERK_PKG"; \
 	test -f "$CLERK_PKG/package.json" || { echo "clerk-shim: FATAL - package dir not found at $CLERK_PKG"; exit 1; }; \
