@@ -4,6 +4,7 @@ import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import {
 	convertQrCodeOptionsToLibraryOptions,
+	generateIsometricQrSvg,
 	RENDER_QR_CODE_MIME_TYPES,
 	type TRenderQrCodeDto,
 	type TRenderQrCodeFormat,
@@ -90,6 +91,30 @@ export class RenderQrCodeUseCase implements IBaseUseCase {
 	}
 
 	private async generateSvg(dto: TRenderQrCodeDto): Promise<string> {
+		if (dto.config.theme === '10bit-isometric') {
+			const dotsStyle = dto.config.dotsOptions?.style;
+			const fgColor =
+				dotsStyle?.type === 'hex' || dotsStyle?.type === 'rgba'
+					? dotsStyle.value
+					: dotsStyle?.type === 'gradient'
+						? (dotsStyle.colorStops?.[0]?.color ?? '#000000')
+						: '#000000';
+
+			const bgStyle = dto.config.backgroundOptions?.style;
+			const bgColor = bgStyle?.type === 'hex' || bgStyle?.type === 'rgba' ? bgStyle.value : null;
+
+			const margin = dto.config.margin;
+			const quietZone =
+				typeof margin === 'number' && margin > 0 ? Math.max(0, Math.round(margin / 20)) : 4;
+
+			return generateIsometricQrSvg(dto.data, {
+				fgColor,
+				bgColor,
+				quietZone,
+				ecc: 'high',
+			});
+		}
+
 		const libraryOptions = convertQrCodeOptionsToLibraryOptions(dto.config);
 
 		if (libraryOptions.image) {
