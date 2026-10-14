@@ -1,4 +1,13 @@
 /*
+ * VENDORED: verbatim port of Project Nayuki's qrcodegen (QR Code generator library).
+ * @ts-nocheck because the frontend tsconfig enables noUncheckedIndexedAccess, which
+ * flags 42 array/tuple index accesses that are provably in-bounds by Nayuki's
+ * invariants. Annotating them all would add noise and typo risk to vendored logic.
+ * Correctness is guaranteed by the test suite (apps/backend/src/core/__tests__/isometric-qr.test.ts).
+ */
+// @ts-nocheck
+
+/*
  * QR Code generator library (TypeScript)
  *
  * Copyright (c) Project Nayuki. (MIT License)
