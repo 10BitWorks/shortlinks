@@ -152,7 +152,7 @@ Docker Compose provides:
 
 - MySQL (3306) — root/root, database: qrcodly
 - Redis (6379)
-- MinIO S3 mock (9000 API, 9001 console) — minio/testtest
+- Garage S3 (3900) — credentials via `GARAGE_*` env vars, bucket auto-bootstrapped
 - phpMyAdmin (8081)
 - Umami analytics (3001)
 

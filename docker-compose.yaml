@@ -69,37 +69,25 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    container_name: qrcodly-minio
-    image: minio/minio:latest
+  garage:
+    container_name: qrcodly-garage
+    image: ghcr.io/10bitworks/shortlinks-garage:latest
     restart: always
+    command: /garage server --single-node --default-bucket
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: testtest
-      MINIO_DEFAULT_BUCKETS: qrcodly
-      MINIO_STORAGE_USE_HTTPS: 0
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: qrcodly
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
     volumes:
-      - minio-data:/data
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
     ports:
-      - 9000:9000
-      - 9001:9001
-    command: server /data --console-address ":9001"
-
-  minio-setup:
-    container_name: qrcodly-minio-setup
-    image: minio/mc:latest
-    depends_on:
-      - minio
-    restart: 'no'
-    entrypoint: >
-      /bin/sh -c "
-      until (/usr/bin/mc alias set local http://minio:9000 minio testtest) do sleep 1; done;
-      /usr/bin/mc mb --ignore-existing local/qrcodly;
-      /usr/bin/mc anonymous set download local/qrcodly;
-      exit 0;
-      "
+      - 3900:3900
 
 volumes:
   database:
-  minio-data:
+  garage-meta:
+  garage-data:
   umami-db-data:
