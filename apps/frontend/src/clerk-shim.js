@@ -1,3 +1,5 @@
+'use client';
+
 export const Show = ({ when, children }) => {
 	// Auth is disabled: treat every visitor as signed out.
 	if (when === 'signed-out') {
@@ -12,7 +14,6 @@ export const UserAvatar = () => null;
 // call site working without ClerkProvider or clerk-js, so no browser ever
 // contacts the placeholder instance's domain (clerk.accounts.dev).
 // Remove this file + the alias when the Authentik OIDC port lands.
-'use client';
 
 import React from 'react';
 
