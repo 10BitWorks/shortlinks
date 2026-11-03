@@ -8,16 +8,18 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/frontend/**"
-      - "packages/**"
-      - "patches/**"
-      - "Dockerfile.frontend"
-      - ".github/workflows/build-frontend.yml"
+      - 'apps/frontend/**'
+      - 'packages/**'
+      - 'patches/**'
+      - 'Dockerfile.frontend'
+      - '.github/workflows/build-frontend.yml'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE: ghcr.io/10bitworks/shortlinks-frontend
+  AUTH_MODE: oidc
+  NEXT_PUBLIC_AUTH_DISABLED: false
 
 jobs:
   build:
@@ -50,6 +52,9 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.frontend
+          build-args: |
+            AUTH_MODE=${{ env.AUTH_MODE }}
+            NEXT_PUBLIC_AUTH_DISABLED=${{ env.NEXT_PUBLIC_AUTH_DISABLED }}
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
 

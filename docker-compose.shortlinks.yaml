@@ -17,10 +17,10 @@
 #               Frontend uses build-time swap (Dockerfile.frontend AUTH_MODE=oidc) and
 #               PKCE code exchange (/api/auth/*) with `shortlinks_oidc_session` cookie.
 #
-# Current Status: Deployment currently runs anonymous mode (frontend clerk-shim,
-# backend clerk-with-placeholder-keys). The deployment flip to AUTH_MODE=oidc awaits
-# Authentik OAuth2 application creation (client ID/secret + issuer). Rollback is a
-# single env toggle to AUTH_MODE=offline / NEXT_PUBLIC_AUTH_DISABLED=true.
+# Current Status: deployment flipped to AUTH_MODE=oidc with Authentik app
+# `shortlinks` (issuer https://auth.10bitworks.org/application/o/shortlinks/);
+# rollback is single env toggle to AUTH_MODE=offline plus rebuilding the frontend
+# image with AUTH_MODE=offline.
 #
 # Billing/Stripe, Umami analytics, Sentry, Cloudflare custom-domains: placeholders.
 
@@ -72,6 +72,9 @@ services:
       - garage
     environment:
       NODE_ENV: production
+      AUTH_MODE: oidc
+      AUTHENTIK_ISSUER: https://auth.10bitworks.org/application/o/shortlinks/
+      AUTHENTIK_CLIENT_ID: oMUxX0d5FJsgK7wCeD3XQh57WM8E291VU0xMC0pp
       API_HOST: 0.0.0.0
       API_PORT: '5001'
       BACKEND_URL: https://api.10bit.works
@@ -132,6 +135,10 @@ services:
       - backend
     environment:
       NODE_ENV: production
+      AUTH_MODE: oidc
+      AUTHENTIK_ISSUER: https://auth.10bitworks.org/application/o/shortlinks/
+      AUTHENTIK_CLIENT_ID: oMUxX0d5FJsgK7wCeD3XQh57WM8E291VU0xMC0pp
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
       PORT: '3000'
       NEXT_PUBLIC_FRONTEND_URL: https://short.10bit.works
       NEXT_PUBLIC_SHORT_URL_DOMAIN: https://short.10bit.works
@@ -150,8 +157,8 @@ services:
       # Skip Clerk in middleware + ClerkProvider while placeholder keys are in
       # place — otherwise browsers get bounced to the fake instance's handshake.
       # NEXT_PUBLIC_ variant is inlined at build time; both must stay in sync.
-      AUTH_DISABLED: 'true'
-      NEXT_PUBLIC_AUTH_DISABLED: 'true'
+      AUTH_DISABLED: 'false'
+      NEXT_PUBLIC_AUTH_DISABLED: 'false'
       AXIOM_TOKEN: placeholder-no-axiom
       AXIOM_DATASET: shortlinks
       NEXT_PUBLIC_GOOGLE_API_KEY: placeholder

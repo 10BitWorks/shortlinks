@@ -62,8 +62,8 @@ export async function GET(request: Request) {
 		return new NextResponse('Missing PKCE code verifier', { status: 400 });
 	}
 
-	const cleanIssuer = issuer.endsWith('/') ? issuer : `${issuer}/`;
-	const tokenEndpoint = `${cleanIssuer}token/`;
+	// Authentik token endpoint is global, not per-app (see login route).
+	const tokenEndpoint = new URL('/application/o/token/', new URL(issuer).origin).toString();
 	const redirectUri = new URL('/api/auth/callback', reqUrl.origin).toString();
 
 	const bodyParams = new URLSearchParams({

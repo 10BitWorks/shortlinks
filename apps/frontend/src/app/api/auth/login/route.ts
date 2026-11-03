@@ -18,8 +18,10 @@ export async function GET(request: Request) {
 		);
 	}
 
-	const cleanIssuer = issuer.endsWith('/') ? issuer : `${issuer}/`;
-	const authorizeUrl = new URL(`${cleanIssuer}authorize/`);
+	// Authentik exposes authorize/token GLOBALLY at `${origin}/application/o/*`,
+	// NOT per-app under the issuer. Issuer = https://auth.10bitworks.org/application/o/shortlinks/
+	const authOrigin = new URL(issuer).origin;
+	const authorizeUrl = new URL('/application/o/authorize/', authOrigin);
 
 	const reqUrl = new URL(request.url);
 	const redirectUri = new URL('/api/auth/callback', reqUrl.origin).toString();

@@ -80,8 +80,8 @@ export const auth = async () => {
 		has: () => false,
 		protect: async () => {},
 		redirectToSignIn: () => {
-			const err = new Error('NEXT_REDIRECT;replace;/auth-offline;307;');
-			err.digest = 'NEXT_REDIRECT;replace;/auth-offline;307;';
+			const err = new Error('NEXT_REDIRECT;replace;/api/auth/login;307;');
+			err.digest = 'NEXT_REDIRECT;replace;/api/auth/login;307;';
 			throw err;
 		},
 	};
