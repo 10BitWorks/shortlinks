@@ -138,13 +138,13 @@ export const useClerk = () => {
 		orgRole: null,
 		orgSlug: null,
 		factorVerificationAge: null,
-		openSignIn: () => {
+		openSignIn: (opts) => {
 			if (typeof window !== 'undefined') window.location.href = '/api/auth/login';
 		},
-		openSignUp: () => {
+		openSignUp: (opts) => {
 			if (typeof window !== 'undefined') window.location.href = '/api/auth/login';
 		},
-		openUserProfile: () => {},
+		openUserProfile: (opts) => {},
 		closeSignIn: () => {},
 		closeSignUp: () => {},
 		closeUserProfile: () => {},
@@ -157,10 +157,10 @@ export const useClerk = () => {
 		redirectToAfterAuth: () => {
 			if (typeof window !== 'undefined') window.location.href = '/';
 		},
-		signOut: async () => {
+		signOut: async (opts) => {
 			if (typeof window !== 'undefined') window.location.href = '/api/auth/logout';
 		},
-		setActive: async () => {},
+		setActive: async (opts) => {},
 	};
 };
 
@@ -300,8 +300,8 @@ export const auth = async () => ({
 	has: () => false,
 	protect: async () => {},
 	redirectToSignIn: () => {
-		const err = new Error('NEXT_REDIRECT;replace;/auth-offline;307;');
-		err.digest = 'NEXT_REDIRECT;replace;/auth-offline;307;';
+		const err = new Error('NEXT_REDIRECT;replace;/api/auth/login;307;');
+		err.digest = 'NEXT_REDIRECT;replace;/api/auth/login;307;';
 		throw err;
 	},
 });
