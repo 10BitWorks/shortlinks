@@ -5,6 +5,18 @@ function base64UrlEncode(buffer: Buffer): string {
 	return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
+// Behind the Coolify/Traefik proxy, request.url resolves to the internal
+// host (localhost:3000). Prefer the configured public URL, then forwarded
+// headers, then the request origin as last resort.
+function getPublicOrigin(request: Request): string {
+	const configured = process.env.NEXT_PUBLIC_FRONTEND_URL;
+	if (configured) return configured.replace(/\/+$/, '');
+	const xfHost = request.headers.get('x-forwarded-host');
+	const xfProto = request.headers.get('x-forwarded-proto') ?? 'https';
+	if (xfHost) return `${xfProto}://${xfHost}`;
+	return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
 	const issuer = process.env.AUTHENTIK_ISSUER;
 	const clientId = process.env.AUTHENTIK_CLIENT_ID;
@@ -23,8 +35,7 @@ export async function GET(request: Request) {
 	const authOrigin = new URL(issuer).origin;
 	const authorizeUrl = new URL('/application/o/authorize/', authOrigin);
 
-	const reqUrl = new URL(request.url);
-	const redirectUri = new URL('/api/auth/callback', reqUrl.origin).toString();
+	const redirectUri = new URL('/api/auth/callback', getPublicOrigin(request)).toString();
 
 	// Generate PKCE code_verifier and code_challenge (S256)
 	const codeVerifier = base64UrlEncode(crypto.randomBytes(32));

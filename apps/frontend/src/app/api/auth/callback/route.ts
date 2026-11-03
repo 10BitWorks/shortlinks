@@ -13,6 +13,18 @@ function decodeJwtPayload(token: string): Record<string, any> | null {
 	}
 }
 
+// Behind the Coolify/Traefik proxy, request.url resolves to the internal
+// host (localhost:3000). Prefer the configured public URL, then forwarded
+// headers, then the request origin as last resort.
+function getPublicOrigin(request: Request): string {
+	const configured = process.env.NEXT_PUBLIC_FRONTEND_URL;
+	if (configured) return configured.replace(/\/+$/, '');
+	const xfHost = request.headers.get('x-forwarded-host');
+	const xfProto = request.headers.get('x-forwarded-proto') ?? 'https';
+	if (xfHost) return `${xfProto}://${xfHost}`;
+	return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
 	const issuer = process.env.AUTHENTIK_ISSUER;
 	const clientId = process.env.AUTHENTIK_CLIENT_ID;
@@ -64,7 +76,7 @@ export async function GET(request: Request) {
 
 	// Authentik token endpoint is global, not per-app (see login route).
 	const tokenEndpoint = new URL('/application/o/token/', new URL(issuer).origin).toString();
-	const redirectUri = new URL('/api/auth/callback', reqUrl.origin).toString();
+	const redirectUri = new URL('/api/auth/callback', getPublicOrigin(request)).toString();
 
 	const bodyParams = new URLSearchParams({
 		grant_type: 'authorization_code',
@@ -127,7 +139,7 @@ export async function GET(request: Request) {
 	const sessionCookieValue = Buffer.from(JSON.stringify(sessionPayload)).toString('base64');
 	const isSecure = process.env.NODE_ENV === 'production';
 
-	const response = NextResponse.redirect(new URL('/', reqUrl.origin).toString(), 302);
+	const response = NextResponse.redirect(new URL('/', getPublicOrigin(request)).toString(), 302);
 
 	// Session cookie
 	response.cookies.set('shortlinks_oidc_session', sessionCookieValue, {

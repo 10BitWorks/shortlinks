@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 
+// Behind the Coolify/Traefik proxy, request.url resolves to the internal
+// host (localhost:3000). Prefer the configured public URL, then forwarded
+// headers, then the request origin as last resort.
+function getPublicOrigin(request: Request): string {
+	const configured = process.env.NEXT_PUBLIC_FRONTEND_URL;
+	if (configured) return configured.replace(/\/+$/, '');
+	const xfHost = request.headers.get('x-forwarded-host');
+	const xfProto = request.headers.get('x-forwarded-proto') ?? 'https';
+	if (xfHost) return `${xfProto}://${xfHost}`;
+	return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
 	const issuer = process.env.AUTHENTIK_ISSUER;
-	const reqUrl = new URL(request.url);
 
 	let redirectTarget = '/';
 	if (issuer) {
@@ -10,7 +21,7 @@ export async function GET(request: Request) {
 		const endSessionUrl = new URL(`${cleanIssuer}end-session/`);
 		endSessionUrl.searchParams.set(
 			'post_logout_redirect_uri',
-			new URL('/', reqUrl.origin).toString(),
+			new URL('/', getPublicOrigin(request)).toString(),
 		);
 		redirectTarget = endSessionUrl.toString();
 	}
