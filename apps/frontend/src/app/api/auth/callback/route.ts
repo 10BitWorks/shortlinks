@@ -46,10 +46,12 @@ export async function GET(request: Request) {
 	const errorDescription = reqUrl.searchParams.get('error_description');
 
 	if (error) {
+		console.warn(`[oidc-callback] rejected: ${error} - ${errorDescription ?? ''}`);
 		return new NextResponse(`OIDC Error: ${error} - ${errorDescription ?? ''}`, { status: 400 });
 	}
 
 	if (!code || !state) {
+		console.warn('[oidc-callback] rejected: missing code or state');
 		return new NextResponse('Missing code or state in callback', { status: 400 });
 	}
 
@@ -67,10 +69,12 @@ export async function GET(request: Request) {
 	const storedVerifier = cookies['shortlinks_oidc_pkce'];
 
 	if (!storedState || storedState !== state) {
+		console.warn('[oidc-callback] rejected: invalid state');
 		return new NextResponse('Invalid state parameter (CSRF detected or expired)', { status: 403 });
 	}
 
 	if (!storedVerifier) {
+		console.warn('[oidc-callback] rejected: missing code verifier');
 		return new NextResponse('Missing PKCE code verifier', { status: 400 });
 	}
 
@@ -105,6 +109,7 @@ export async function GET(request: Request) {
 
 	if (!tokenRes.ok) {
 		const errText = await tokenRes.text();
+		console.error(`[oidc-callback] token exchange failed: ${tokenRes.status} ${errText}`);
 		return new NextResponse(`Token exchange failed: ${errText}`, { status: tokenRes.status });
 	}
 
@@ -126,17 +131,26 @@ export async function GET(request: Request) {
 			? claims.exp
 			: Math.floor(Date.now() / 1000) + (tokenData.expires_in || 3600);
 
+	// Keep the cookie under the ~4KB browser limit: Authentik JWTs are chunky,
+	// so store only the claims we actually consume (me route + provider context).
+	// idToken and the full claims object are NOT persisted.
 	const sessionPayload = {
 		accessToken,
-		idToken: idToken || null,
 		sub,
 		email,
 		name,
-		claims,
 		exp,
 	};
 
 	const sessionCookieValue = Buffer.from(JSON.stringify(sessionPayload)).toString('base64');
+	console.log(
+		`[oidc-callback] session established: sub=${sub} cookieBytes=${sessionCookieValue.length}`,
+	);
+	if (sessionCookieValue.length > 4000) {
+		console.warn(
+			`[oidc-callback] session cookie ${sessionCookieValue.length}B exceeds the ~4KB browser limit and may be dropped`,
+		);
+	}
 	const isSecure = process.env.NODE_ENV === 'production';
 
 	const response = NextResponse.redirect(new URL('/', getPublicOrigin(request)).toString(), 302);
