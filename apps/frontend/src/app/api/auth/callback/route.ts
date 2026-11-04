@@ -153,7 +153,10 @@ export async function GET(request: Request) {
 	}
 	const isSecure = process.env.NODE_ENV === 'production';
 
-	const response = NextResponse.redirect(new URL('/', getPublicOrigin(request)).toString(), 302);
+	const response = NextResponse.redirect(
+		new URL('/dashboard/qr-codes', getPublicOrigin(request)).toString(),
+		302,
+	);
 
 	// Session cookie
 	response.cookies.set('shortlinks_oidc_session', sessionCookieValue, {
