@@ -96,7 +96,9 @@ export function downloadBlob(blob: Blob, filename: string): void {
 	document.body.appendChild(anchor);
 	anchor.click();
 	document.body.removeChild(anchor);
-	URL.revokeObjectURL(url);
+	// Firefox cancels in-flight blob downloads if the object URL is revoked
+	// synchronously after click(); defer revocation so the download completes.
+	setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 /**
